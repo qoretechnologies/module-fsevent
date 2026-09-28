@@ -1,0 +1,89 @@
+Debian/Ubuntu packaging for the fsevent module
+=============================================
+
+qore-fsevent-module contains the native watcher, FsEventPoller and
+FsEventPollerUtil, both Qore sources and compiled qmods, and all compiler
+metadata. qore-fsevent-module-doc contains the three API references and tests.
+Debhelper creates matching debug symbols for all three ELF modules.
+
+Build prerequisites and supported scope
+--------------------------------------
+
+Use an isolated native build environment with the packaged Qore runtime and
+libqore-dev, then install the Build-Depends from debian/control. Qualification
+currently targets Ubuntu 26.04 amd64 with Qore 3.0 development packages. Other
+Debian/Ubuntu releases and architectures need their own qualified SDK and native
+testing. Cross builds are rejected because Qore tools run during compilation.
+
+The bundled efsw implementation is private to the module. It includes Qore's
+watcher-destruction fixes (including commit 846ba83), threading changes and
+portability fixes; substituting an unpatched library would lose those changes.
+There is no efsw development package in the qualified distribution. No separate
+efsw library is installed. Its MIT license and the embedded SFML/Zlib and
+public-domain notices are included in debian/copyright.
+
+Native Qore modules resolve libqore symbols at load time without linking it.
+The package therefore derives a minimum libqore SONAME package and qore version
+from the SDK used to build it. Other shared-library dependencies come from
+dh_shlibdeps. The package requires the native interpreter, includes architecture
+specific qmods and shared metadata, and is not marked Multi-Arch: same.
+
+AOT modules and debug symbols
+----------------------------
+
+The build explicitly enables AOT modules, disables source-tree qmod symlinks,
+and honors the noopt build option for Qore compilation. Distribution prefix maps
+are passed through the SDK's CMake macros for reproducible qmods and metadata.
+Only the new native module, new qmods and packaged Qore standard library are
+used by build-time tests. All three modules remain in the runtime package.
+
+dh_strip must preserve Qore's appended dependency/source-location/optional-module
+metadata. debian/preserve-aot-metadata.py is copied from Qore's qualified
+packaging and wraps all stripping/debug-link operations. Its real-ELF unit tests
+run during package builds. dwz skips this runtime package because it does not
+understand all LLVM DWARF forms; dh_strip still creates matching debug packages.
+Do not replace this handling with ordinary stripping or omit AOT trailers.
+
+Source and binary builds
+------------------------
+
+Use a fresh version for every changed upload. This snapshot precedes 2.0.0.
+From a clean committed checkout:
+
+    version=2.0.0~git20260928.1
+    mkdir -p ../fsevent-package-work
+    git archive --format=tar --prefix="qore-fsevent-module-$version/" \
+        HEAD -- . ':!debian' | xz > \
+        "../fsevent-package-work/qore-fsevent-module_$version.orig.tar.xz"
+    tar -xf "../fsevent-package-work/qore-fsevent-module_$version.orig.tar.xz" \
+        -C ../fsevent-package-work
+    cp -a debian "../fsevent-package-work/qore-fsevent-module-$version/"
+    cd "../fsevent-package-work/qore-fsevent-module-$version"
+    dpkg-buildpackage -S -us -uc
+
+Extract the .dsc with dpkg-source -x into a clean build directory. Install all
+build dependencies and build unprivileged with networking disabled:
+
+    dpkg-buildpackage -b -us -uc
+
+Architecture-only builds (-B) do not need Doxygen; architecture-independent
+builds (-A) produce documentation. Both DEB_BUILD_OPTIONS=nodoc and
+DEB_BUILD_PROFILES=nodoc suppress docs; the profile also omits the doc package.
+Do not use nocheck for qualification.
+
+Qualification and publication
+-----------------------------
+
+Run all seven upstream suites, including callback destruction, negative cases,
+filesystem watching and both Qore modules. The tests resolve modules by name;
+source-tree users can use ../qlib, while installed tests copy only test scripts
+and explicitly preload the installed qmods, with no source directory available.
+The compiler test configures a native watcher with named method arguments and checks
+the event data type registered by FsEventPollerUtil in a fresh executable.
+No external service or optional Qore module is required.
+
+Check source/binary Lintian, all three ELF modules' hardening, matching DWARF
+and Qore trailers, runtime-only install without SDK, docs/debug coinstallation,
+dpkg -V, purge/reinstall and reproducibility in two distinct build directories.
+Retain source/package hashes, the commit, dependency inventory and test logs.
+Testing-PPA publication is separate from approval for a final general release.

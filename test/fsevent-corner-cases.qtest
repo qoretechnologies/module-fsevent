@@ -5,10 +5,11 @@
 #
 
 %modern
+%prepend-module-path "${SCRIPT_DIR}/../qlib"
 
 %requires Util
 %requires QUnit
-%requires ../qlib/FsEventPoller.qm
+%requires FsEventPoller
 
 %exec-class CornerCaseTests
 

@@ -1,0 +1,7 @@
+qore-fsevent-module (2.0.0~git20260928.1-0qore1~ubuntu26.04) resolute; urgency=medium
+
+  * Package the native watcher and both source/AOT Qore modules.
+  * Preserve AOT metadata during stripping and ship matching debug symbols.
+  * Qualify installed modules, compiler integration and filesystem events.
+
+ -- David Nichols <david@qore.org>  Mon, 28 Sep 2026 21:08:29 -0000

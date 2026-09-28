@@ -1,0 +1,3 @@
+usr/lib/*/qore-modules/*.qmod
+usr/share/qore-modules/*.qm
+usr/share/qore/metadata/fsevent/*.meta.json

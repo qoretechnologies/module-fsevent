@@ -4,3 +4,14 @@
 # ignore cmake builds
 build/
 build-*/
+
+# Debian package build output
+obj-*/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/qore-fsevent-module/
+debian/qore-fsevent-module-doc/
+debian/tmp/
+debian/__pycache__/

@@ -1,0 +1,100 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: qore-fsevent-module
+Upstream-Contact: David Nichols <david@qore.org>
+Source: https://github.com/qoretechnologies/module-fsevent
+
+Files: *
+Copyright: 2012-2026 Qore Technologies, s.r.o.
+License: LGPL-2.1+ or MIT
+Comment: README offers a choice of LGPL 2.1 and MIT. Individual native source
+ headers permit LGPL 2.1 or any later version.
+
+Files: qlib/*
+Copyright: 2014-2020 Qore Technologies, s.r.o.
+License: MIT
+
+Files: src/efsw/* src/include/efsw/*
+Copyright: 2024 Martín Lucas Golini
+           James Wynn <james@jameswynn.com>
+           2026 Qore Technologies, s.r.o.
+License: MIT
+Comment: Bundled Entropia File System Watcher, based on simplefilewatcher.
+ The Qore fork includes watcher destruction, threading and portability fixes.
+ Upstream license: https://github.com/SpartanJ/efsw/blob/master/LICENSE
+
+Files: src/efsw/Utf.hpp src/efsw/Utf.inl
+       src/efsw/String.hpp src/efsw/String.cpp
+       src/efsw/platform/posix/SystemImpl.cpp
+Copyright: Laurent Gomila <laurent@sfml-dev.org>
+           2024 Martín Lucas Golini
+License: Zlib and MIT
+Comment: Modified SFML UTF/string implementation and POSIX sleep routine;
+ these are not the original SFML implementation. The SFML license and
+ attribution are documented at https://www.sfml-dev.org/license/.
+
+Files: src/efsw/sophist.h
+Copyright: 2010 Sean Barrett
+License: public-domain
+ The source header declares sophist.h version 0.3 to be public domain.
+
+Files: debian/*
+Copyright: 2026 David Nichols
+License: MIT
+
+Files: debian/preserve-aot-metadata.py debian/tests/test_aot_metadata.py
+Copyright: 2026 Qore Technologies, s.r.o.
+License: MIT
+Comment: Copied from Qore's Debian packaging; preserve appended AOT trailers
+ around ELF stripping and verify preservation with real ELF operations.
+
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation; either version 2.1 of the License, or (at
+ your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ License for more details.
+ .
+ On Debian systems the complete license is available in
+ /usr/share/common-licenses/LGPL-2.1.
+
+License: MIT
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ DEALINGS IN THE SOFTWARE.
+
+License: Zlib
+ This software is provided 'as-is', without any express or implied warranty.
+ In no event will the authors be held liable for any damages arising from
+ the use of this software.
+ .
+ Permission is granted to anyone to use this software for any purpose,
+ including commercial applications, and to alter it and redistribute it
+ freely, subject to the following restrictions:
+ .
+ 1. The origin of this software must not be misrepresented; you must not claim
+    that you wrote the original software. If you use this software in a product,
+    an acknowledgment in the product documentation would be appreciated but is
+    not required.
+ .
+ 2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+ .
+ 3. This notice may not be removed or altered from any source distribution.

@@ -1,0 +1,37 @@
+Source: qore-fsevent-module
+Section: interpreters
+Priority: optional
+Maintainer: David Nichols <david@qore.org>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.5),
+               libqore-dev (>= 3.0.0~),
+               qore (>= 3.0.0~),
+               python3
+Build-Depends-Indep: doxygen <!nodoc>
+Standards-Version: 4.7.4
+Rules-Requires-Root: no
+Homepage: https://qore.org
+Vcs-Git: https://github.com/qoretechnologies/module-fsevent.git
+Vcs-Browser: https://github.com/qoretechnologies/module-fsevent
+
+Package: qore-fsevent-module
+Architecture: any
+Depends: ${qore:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: qore-fsevent-module-doc
+Description: filesystem event monitoring modules for Qore
+ This package provides the native filesystem watcher and the FsEventPoller
+ and FsEventPollerUtil Qore modules. It includes compiled and source modules,
+ compiler metadata, and high-level polling and event handling APIs.
+
+Package: qore-fsevent-module-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Build-Profiles: <!nodoc>
+Depends: ${misc:Depends}
+Suggests: qore-fsevent-module
+Description: documentation and examples for Qore's filesystem event modules
+ This package contains the HTML API references and example tests for Qore's
+ native filesystem watcher and Qore event poller modules.

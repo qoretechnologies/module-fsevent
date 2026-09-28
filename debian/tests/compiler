@@ -1,0 +1,26 @@
+#!/bin/sh
+# Copyright (C) 2026 David Nichols
+# SPDX-License-Identifier: MIT
+set -eu
+unset QORE_MODULE_DIR QORE_MODULE_DIR_ONLY QORE_INCLUDE_DIR LD_LIBRARY_PATH LD_PRELOAD
+cd "$AUTOPKGTEST_TMP"
+cat > fsevent-smoke.q <<'EOF'
+%modern
+%requires fsevent
+%requires FsEventPoller
+%requires FsEventPollerUtil
+%requires DataProvider
+class PackageWatcher inherits AbstractFsWatcher {
+    event(hash<FsEventInfo> event) {
+    }
+}
+PackageWatcher watcher();
+watcher.setFollowSymlinks(follow: False);
+AbstractDataProviderType event_type = DataProvider::getType("qore/fsevents/event");
+if (watcher.getWatchCount() || watcher.getFollowSymlinks()
+        || event_type.getInfo().base_type != "hash") {
+    exit(1);
+}
+EOF
+/usr/bin/qcc -o fsevent-smoke fsevent-smoke.q
+./fsevent-smoke

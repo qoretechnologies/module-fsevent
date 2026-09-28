@@ -1,0 +1,9 @@
+Document: qore-fsevent-module
+Title: Qore FsEvent Module Reference
+Author: Qore Technologies, s.r.o.
+Abstract: API references for the native watcher and filesystem event poller modules.
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/qore-fsevent-module-doc/docs/fsevent/html/index.html
+Files: /usr/share/doc/qore-fsevent-module-doc/docs/*/html/*.html

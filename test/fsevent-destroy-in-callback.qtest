@@ -8,14 +8,12 @@
 # which hung the process at exit. This test deterministically forces that exact situation and verifies
 # the program continues to run.
 
-%new-style
-%enable-all-warnings
-%require-types
-%strict-args
+%modern
+%prepend-module-path "${SCRIPT_DIR}/../qlib"
 
 %requires Util
 %requires QUnit
-%requires ../qlib/FsEventPoller.qm
+%requires FsEventPoller
 
 %exec-class Main
 
