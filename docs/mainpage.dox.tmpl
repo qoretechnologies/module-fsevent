@@ -53,6 +53,7 @@
     @section fseventreleasenotes fsevent Module Release Notes
 
     @subsection fsevent_2_0 fsevent Module Version 2.0.0
+    - Fixed failed POSIX path resolution reading an uninitialized buffer; missing, broken, looping, and overlong paths now return an empty result
     - <b>BREAKING CHANGE</b>: addPath() now returns \c AbstractFsWatcher for fluent API chaining instead of the watch ID
     - Added addPathWithId() for cases where the watch ID is needed
     - Added symlink support: setFollowSymlinks(), getFollowSymlinks(), setAllowOutOfScopeLinks(), getAllowOutOfScopeLinks()

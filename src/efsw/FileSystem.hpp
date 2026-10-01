@@ -34,6 +34,7 @@ class FileSystem {
 
 	static std::string getCurrentWorkingDirectory();
 
+	/// Resolve a path, returning an empty string when POSIX realpath fails.
 	static std::string getRealPath( const std::string& path );
 
 };

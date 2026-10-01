@@ -145,7 +145,9 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 	std::string realPath;
 #if defined( EFSW_PLATFORM_POSIX )
 	char dir[PATH_MAX];
-	realpath( path.c_str(), &dir[0] );
+	if ( !realpath( path.c_str(), &dir[0] ) ) {
+		return std::string();
+	}
 	realPath = std::string( dir );
 #elif EFSW_OS == EFSW_OS_WIN
 	wchar_t dir[_MAX_PATH + 1];
