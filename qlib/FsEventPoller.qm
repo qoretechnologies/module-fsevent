@@ -507,7 +507,7 @@ public hashdecl FsDelayedEventPollerOptionInfo {
 /** The additional functionality of this class is to provide last modification timestamp
     check for affected files. The \c fileEvent() method is invoked only if
     the last modification timestamp is older than value specified
-    by @ref FsEventPollerUtil::FsDelayedEventPollerOptionInfo key \c minage.
+    by @ref FsEventPoller::FsDelayedEventPollerOptionInfo key \c minage.
 
     The example usecase can be when you need to communicate with applications
     which cannot write files atomically so your code needs to assume all
