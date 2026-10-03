@@ -1,7 +1,7 @@
 # -*- mode: qore; indent-tabs-mode: nil -*-
 #! @file FsEventPollerUtil.qm provides definitions for the FsEventPoller module
 
-/*  FsEventPollerUtil.qm Copyright (C) 2014 - 2020 Qore Technologies, s.r.o.
+/*  FsEventPollerUtil.qm Copyright (C) 2014 - 2026 Qore Technologies, s.r.o.
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the "Software"),
@@ -45,10 +45,12 @@ module FsEventPollerUtil {
 
 /** @mainpage FsEventPollerUtil Module
 
-    @section FsEventPollerutilintro Introduction to the FsEventPollerUtil Module
+    @section fseventpollerutilintro FsEventPollerUtil Module Introduction
+
+    @anchor FsEventPollerutilintro
 
     The FsEventPollerUtil module provides DataProvider integration for the
-    <a href="../../FsEventPoller/html/index.html">FsEventPoller</a> module.
+    @ref fseventpollerintro "FsEventPoller" module.
 
     This module registers the \c qore/fsevents/event data type with the DataProvider framework,
     enabling filesystem events to be used in data pipelines and integrations.

@@ -104,6 +104,7 @@ SET (module_name "fsevent")
 
 set(QORE_DOX_TMPL_SRC
   docs/mainpage.dox.tmpl
+    docs/guide-fseventreleasenotes.dox.tmpl
 )
 
 add_library(${module_name} MODULE ${CPP_SRC} ${QPP_SOURCES} ${EFSW_SRC})
@@ -117,6 +118,9 @@ if (DEFINED ENV{DOXYGEN_EXECUTABLE})
 endif()
 
 set(MODULE_DOX_INPUT "${CMAKE_BINARY_DIR}/mainpage.dox" ${_dox_src})
+list(APPEND MODULE_DOX_INPUT
+    ${CMAKE_CURRENT_BINARY_DIR}/guide-fseventreleasenotes.dox
+)
 qore_external_binary_module(${module_name} ${PROJECT_VERSION})
 
 qore_external_user_module("qlib/FsEventPollerUtil.qm" "")
@@ -138,4 +142,9 @@ if (DOXYGEN_FOUND)
   qore_wrap_dox(QORE_DOX_SRC ${QORE_DOX_TMPL_SRC})
   add_custom_target(QORE_MOD_DOX_FILES DEPENDS ${QORE_DOX_SRC})
   add_dependencies(docs-module QORE_MOD_DOX_FILES)
+endif()
+
+# Resolve links between the native API and all companion user modules.
+if (DOXYGEN_FOUND)
+    qore_binary_module_two_phase_docs(${module_name} "FsEventPoller;FsEventPollerUtil")
 endif()

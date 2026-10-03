@@ -26,10 +26,6 @@
 
     If any of the backend fails to start by any reason, it will fallback to the OS-independent implementation
 
-    Also included with the binary fsevent module:
-    - <a href="../../FsEventPollerUtil/html/index.html">FsEventPollerUtil user module</a>
-    - <a href="../../FsEventPoller/html/index.html">FsEventPoller user module</a>
-
     @section basic_usage Basic usage
 
     See @ref Qore::FsEvents::AbstractFsWatcher "AbstractFsWatcher" for a full reference including a simple example.
@@ -52,25 +48,8 @@
 
     @section fseventreleasenotes fsevent Module Release Notes
 
-    @subsection fsevent_2_0 fsevent Module Version 2.0.0
-    - Fixed failed POSIX path resolution reading an uninitialized buffer; missing, broken, looping, and overlong paths now return an empty result
-    - <b>BREAKING CHANGE</b>: addPath() now returns \c AbstractFsWatcher for fluent API chaining instead of the watch ID
-    - Added addPathWithId() for cases where the watch ID is needed
-    - Added symlink support: setFollowSymlinks(), getFollowSymlinks(), setAllowOutOfScopeLinks(), getAllowOutOfScopeLinks()
-    - Added error query methods: getLastErrorCode(), getLastErrorMessage(), clearLastError()
-    - Added error constants: E_NOERROR, E_FILENOTFOUND, E_FILEREPEATED, E_FILEOUTOFSCOPE, E_FILENOTREADABLE, E_FILEREMOTE, E_WATCHERFAILED, E_UNSPECIFIED
-    - Added getBackendType() to identify the platform backend (inotify, kqueue, win32, generic)
-    - Added getStatistics() for watcher state information
-    - Added isWatching() and getWatchCount() query methods
-    - Fixed ACTION_MAP and ACTION_RMAP to use symbolic efsw constants
-    - Updated bundled efsw library to version 1.5.0 (fixes double-free bug in inotify implementation)
-    - Fixed use-after-free race condition in inotify backend when calling removePath(id) during active event processing
+    @subpage fseventreleasenotesguide
 
-    @subsection fsevent_1_1 fsevent Module Version 1.1.0
-    - updated to the efsw 1.4.1
-
-    @subsection fsevent_1_0 fsevent Module Version 1.0
-    - initial public release
 
     @section fsevent_troubleshooting Troubleshooting Guide
 
@@ -163,4 +142,10 @@ ulimit -n 4096
     - Increase I/O completion port buffer size for fast filesystems
     - Avoid watching network drives if possible
     - Use longer minage values for remote files
+
+    @section fseventqlibmodules Qore User Modules
+
+    - @ref fseventpollerintro "FsEventPoller" — fsevent-based Filesystem polling solution
+    - @ref fseventpollerutilintro "FsEventPollerUtil" — %FsEventPollerUtil module
+
 */
