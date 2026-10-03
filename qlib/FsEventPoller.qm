@@ -102,7 +102,7 @@ stop.waitForZero();
     - Fixed minage error message
 
     @subsection fseventpoller_v010 FsEventPoller v0.1.0
-    - Initial release
+    - initial release
 */
 
 %requires reflection

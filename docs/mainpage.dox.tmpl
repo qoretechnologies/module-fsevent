@@ -26,6 +26,15 @@
 
     If any of the backend fails to start by any reason, it will fallback to the OS-independent implementation
 
+    @section fseventqlibmodules Qore User Modules
+
+    - @ref fseventpollerintro "FsEventPoller" — fsevent-based Filesystem polling solution
+    - @ref fseventpollerutilintro "FsEventPollerUtil" — %FsEventPollerUtil module
+
+    @par Documentation
+
+    - @anchor fseventreleasenotes @subpage fseventreleasenotesguide
+
     @section basic_usage Basic usage
 
     See @ref Qore::FsEvents::AbstractFsWatcher "AbstractFsWatcher" for a full reference including a simple example.
@@ -45,11 +54,6 @@
 
     The OS-independent watcher and Kqueue keep a cache of the directory structures to be able to detect changes in the
     directories. This entails memory overhead for these backends.
-
-    @section fseventreleasenotes fsevent Module Release Notes
-
-    @subpage fseventreleasenotesguide
-
 
     @section fsevent_troubleshooting Troubleshooting Guide
 
@@ -142,10 +146,5 @@ ulimit -n 4096
     - Increase I/O completion port buffer size for fast filesystems
     - Avoid watching network drives if possible
     - Use longer minage values for remote files
-
-    @section fseventqlibmodules Qore User Modules
-
-    - @ref fseventpollerintro "FsEventPoller" — fsevent-based Filesystem polling solution
-    - @ref fseventpollerutilintro "FsEventPollerUtil" — %FsEventPollerUtil module
 
 */
