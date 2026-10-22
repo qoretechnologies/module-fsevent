@@ -9,6 +9,8 @@
 
 #include <thread>
 
+#include <unistd.h>
+
 using namespace efsw;
 
 DLLLOCAL extern qore_classid_t CID_ABSTRACTFSWATCHER;
@@ -35,6 +37,16 @@ public:
     DLLLOCAL void stop() {
         //printd(5, "FsWatcherPriv::~FsWatcherPriv() this: %p\n", this);
         FileWatcher* fw = nullptr;
+        if (forkedChild()) {
+            // A child process created with fork(): the watch thread exists only in the parent, and the watcher's
+            // kernel notification descriptor is shared with the parent.  Waiting for an in-flight callback or
+            // joining the watch thread would wait forever, and removing the watches would remove the parent's, so
+            // the watcher is abandoned without a lock (only the forking thread was copied; a lock that the watch
+            // thread held stays held here); its memory is released with the process.
+            m_fw = nullptr;
+            stopped = true;
+            return;
+        }
         {
             AutoLocker al(callback_lock);
 
@@ -89,31 +101,42 @@ public:
         delete fw;
     }
 
-    // Symlink support - these methods must not be called after stop()
+    // Symlink support - these methods must not be called after stop(); in a child process created with fork(), the
+    // watcher behaves as if it were stopped (see getWatcher())
     DLLLOCAL void setFollowSymlinks(bool follow) {
-        if (m_fw) m_fw->followSymlinks(follow);
+        if (FileWatcher* fw = getWatcher()) {
+            fw->followSymlinks(follow);
+        }
     }
 
     DLLLOCAL bool getFollowSymlinks() const {
-        return m_fw ? m_fw->followSymlinks() : false;
+        FileWatcher* fw = getWatcher();
+        return fw ? fw->followSymlinks() : false;
     }
 
     DLLLOCAL void setAllowOutOfScopeLinks(bool allow) {
-        if (m_fw) m_fw->allowOutOfScopeLinks(allow);
+        if (FileWatcher* fw = getWatcher()) {
+            fw->allowOutOfScopeLinks(allow);
+        }
     }
 
     DLLLOCAL bool getAllowOutOfScopeLinks() const {
-        return m_fw ? m_fw->allowOutOfScopeLinks() : false;
+        FileWatcher* fw = getWatcher();
+        return fw ? fw->allowOutOfScopeLinks() : false;
     }
 
     // Query methods - return safe defaults if watcher is stopped
     DLLLOCAL int getWatchCount() const {
-        return m_fw ? m_fw->directories().size() : 0;
+        FileWatcher* fw = getWatcher();
+        return fw ? fw->directories().size() : 0;
     }
 
     DLLLOCAL bool isWatching(const char* path) const {
-        if (!m_fw) return false;
-        const std::vector<std::string>& dirs = m_fw->directories();
+        FileWatcher* fw = getWatcher();
+        if (!fw) {
+            return false;
+        }
+        const std::vector<std::string>& dirs = fw->directories();
         std::string pathStr(path);
         for (const auto& dir : dirs) {
             if (dir == pathStr || dir == pathStr + "/") {
@@ -141,6 +164,31 @@ private:
     FileWatcher* m_fw;
     const QoreMethod* event;
     QoreObject* m_obj;
+    // the process that created the watcher and its watch thread
+    pid_t pid;
+
+    // returns true in a child process created with fork() after the watcher was created: the watch thread exists
+    // only in the parent, which shares the watcher's kernel notification descriptor
+    DLLLOCAL bool forkedChild() const {
+        return getpid() != pid;
+    }
+
+    // returns the watcher, or nullptr if it has been stopped or if this is a child process created with fork()
+    // after the watcher was created
+    DLLLOCAL FileWatcher* getWatcher() const {
+        return forkedChild() ? nullptr : m_fw;
+    }
+
+    // raises FSWATCHER-FORK-ERROR in a child process created with fork() after the watcher was created
+    DLLLOCAL int checkProcess(ExceptionSink* xsink) const {
+        if (forkedChild()) {
+            xsink->raiseException("FSWATCHER-FORK-ERROR", "the watcher was created by process %d; it cannot be used "
+                "in a child process created with fork(), as its watch thread exists only in that process",
+                static_cast<int>(pid));
+            return -1;
+        }
+        return 0;
+    }
 
     // Thread safety for callbacks during destruction
     mutable QoreThreadLock callback_lock;
@@ -159,7 +207,7 @@ private:
     QoreSandboxCapture sandbox;
 };
 
-FsWatcherPriv::FsWatcherPriv(QoreObject *obj) {
+FsWatcherPriv::FsWatcherPriv(QoreObject *obj) : pid(getpid()) {
     //printd(5, "FsWatcherPriv::FsWatcherPriv() this: %p\n", this);
     m_fw = new FileWatcher();
     event = obj->getClass()->findMethod("event");
@@ -177,6 +225,9 @@ FsWatcherPriv::~FsWatcherPriv() {
 }
 
 int FsWatcherPriv::addWatch(const char * path, bool recursive, ExceptionSink *xsink) {
+    if (checkProcess(xsink)) {
+        return 0;
+    }
     // Check filesystem sandbox access before monitoring directory
     QoreSandboxManagerHelper smh;
     if (smh && !smh->checkFilesystemAccess(path, QSEC_READ, xsink)) {
@@ -201,14 +252,23 @@ int FsWatcherPriv::addWatch(const char * path, bool recursive, ExceptionSink *xs
 }
 
 void FsWatcherPriv::removeWatch(WatchID id, ExceptionSink *xsink) {
+    if (checkProcess(xsink)) {
+        return;
+    }
     m_fw->removeWatch(id);
 }
 
 void FsWatcherPriv::removeWatch(const char * path, ExceptionSink *xsink) {
+    if (checkProcess(xsink)) {
+        return;
+    }
     m_fw->removeWatch(path);
 }
 
 QoreValue FsWatcherPriv::directories(ExceptionSink* xsink) {
+    if (checkProcess(xsink)) {
+        return QoreValue();
+    }
     const std::vector<std::string>& dirs = m_fw->directories();
     if (!dirs.size()) {
         return QoreValue();
@@ -351,6 +411,13 @@ hashdecl Qore::FsEvents::FsEventInfo {
       the callbacks run on the watcher's own thread
     - addPath() checks read access to the path with the sandbox of the code that calls it
 
+    @par Child Processes Created with fork()
+    - A watcher cannot be used in a child process created with \c fork() after the watcher was created: its watch
+      thread exists only in the parent, and the child shares the watcher's kernel notification descriptor with the
+      parent.  In the child, the watcher delivers no events and reports no watched directories, addPath(),
+      addPathWithId(), removePath(), directories() and getStatistics() raise \c FSWATCHER-FORK-ERROR, and the
+      destruction of the watcher neither waits for the watch thread nor changes the parent's watches
+
     @par Exception Handling
     - Exceptions thrown in the event() callback are caught and discarded to prevent crashing the watcher thread
     - Use try/catch in event() to handle and log exceptions appropriately
@@ -445,6 +512,8 @@ AbstractFsWatcher::destructor() {
     @note To get the watch ID when adding a path, use addPathWithId() instead of this method.
 
     @throw FSWATCHER-ADD-ERROR if the path cannot be watched
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
 
     Example:
     @code{.py}
@@ -464,6 +533,9 @@ AbstractFsWatcher AbstractFsWatcher::addPath(string path, bool recursive = False
     @param id an integer value. Obtained by AbstractFsWatcher::addPath
 
     This method uses a map lookup: \a O(ln(n))
+
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
  */
 AbstractFsWatcher::removePath(int id) [flags=NAMED_ARGS] {
     priv->removeWatch(id, xsink);
@@ -474,6 +546,9 @@ AbstractFsWatcher::removePath(int id) [flags=NAMED_ARGS] {
     @param path	a named path to remove
 
     This method uses a linear search: \a O(n)
+
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
  */
 AbstractFsWatcher::removePath(string path) [flags=NAMED_ARGS] {
     priv->removeWatch(path->getBuffer(), xsink);
@@ -483,6 +558,9 @@ AbstractFsWatcher::removePath(string path) [flags=NAMED_ARGS] {
 /**
     @return list of all registered (top-level) directories in this watcher instance or @ref nothing if there is no
     directory registered
+
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
  */
 *list<string> AbstractFsWatcher::directories() {
     return priv->directories(xsink);
@@ -617,6 +695,8 @@ bool AbstractFsWatcher::isWatching(string path) [flags=NAMED_ARGS] {
     For fluent API, use addPath() instead.
 
     @throw FSWATCHER-ADD-ERROR if the path cannot be watched
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
 
     @see addPath()
  */
@@ -632,6 +712,9 @@ int AbstractFsWatcher::addPathWithId(string path, bool recursive = False) [flags
     - \c directories (list<string>): List of watched directories (or NOTHING if empty)
     - \c followSymlinks (bool): Whether symlinks are being followed
     - \c allowOutOfScopeLinks (bool): Whether out-of-scope symlinks are allowed
+
+    @throw FSWATCHER-FORK-ERROR the watcher was created by another process (this is a child process created with
+    \c fork())
  */
 hash<auto> AbstractFsWatcher::getStatistics() {
     ReferenceHolder<QoreHashNode> rv(new QoreHashNode(autoTypeInfo), xsink);

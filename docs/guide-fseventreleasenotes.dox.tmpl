@@ -8,6 +8,9 @@
     - <b>Security</b>: the event() callback of a watcher now runs under the sandbox of the code that created the
       watcher; previously it ran on the watcher's own thread with no sandbox, so a watcher created on behalf of
       sandboxed code could do more in its callback than that code could
+    - Fixed a child process created with \c fork() waiting forever when it destroyed a watcher created by its parent
+      (also when it ended its script); in the child, such a watcher is now abandoned without changing the parent's
+      watches, and using it raises \c FSWATCHER-FORK-ERROR
     - Fixed failed POSIX path resolution reading an uninitialized buffer; missing, broken, looping, and overlong paths now return an empty result
     - <b>BREAKING CHANGE</b>: addPath() now returns \c AbstractFsWatcher for fluent API chaining instead of the watch ID
     - Added addPathWithId() for cases where the watch ID is needed
