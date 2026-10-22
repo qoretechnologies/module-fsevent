@@ -5,6 +5,9 @@
     @tableofcontents
 
     @section fsevent_2_0 fsevent Module Version 2.0.0
+    - <b>Security</b>: the event() callback of a watcher now runs under the sandbox of the code that created the
+      watcher; previously it ran on the watcher's own thread with no sandbox, so a watcher created on behalf of
+      sandboxed code could do more in its callback than that code could
     - Fixed failed POSIX path resolution reading an uninitialized buffer; missing, broken, looping, and overlong paths now return an empty result
     - <b>BREAKING CHANGE</b>: addPath() now returns \c AbstractFsWatcher for fluent API chaining instead of the watch ID
     - Added addPathWithId() for cases where the watch ID is needed

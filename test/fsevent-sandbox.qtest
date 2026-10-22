@@ -1,0 +1,196 @@
+#!/usr/bin/env qore
+# -*- mode: qore; indent-tabs-mode: nil -*-
+# Copyright (C) 2026 Qore Technologies, s.r.o.
+
+# A watcher's event() callback runs on the watcher's own thread, which Qore did not start; it must still be governed
+# by the sandbox of the code that created the watcher, so that the callback can never do more than that code.
+#
+# The trusted code is modeled by a Program with no sandbox (like a module Program) that creates a watcher whose
+# event() reads a file; the sandboxed code by a Program with a SandboxManager that allows reading the watched
+# directory but denies the file.
+
+%modern
+%no-child-restrictions
+
+%requires QUnit
+%requires Util
+%requires FsUtil
+%requires fsevent
+
+%exec-class FsEventSandboxTest
+
+class FsEventSandboxTest inherits QUnit::Test {
+    private {
+        #! the test directory
+        string dir;
+        #! the file that the sandbox denies
+        string secret;
+        #! the number of watched directories made so far
+        int watched_count = 0;
+    }
+
+    #! the content of the secret file
+    const SecretContent = "the secret content";
+
+    #! the longest a test waits for an event; it is a guard against a hang, never an expected time
+    const EventTimeout = 60s;
+
+    #! the trusted code: a watcher whose callback reads a file on its creator's behalf
+    const TrustedSource = "
+%requires fsevent
+
+class SecretReader inherits FsEvents::AbstractFsWatcher {
+    private {
+        string path;
+        Queue results;
+    }
+
+    constructor(string path, Queue results) {
+        self.path = path;
+        self.results = results;
+    }
+
+    event(hash<FsEvents::FsEventInfo> event) {
+        try {
+            results.push(ReadOnlyFile::readTextFile(path));
+        } catch (hash<ExceptionInfo> ex) {
+            results.push(ex.err);
+        }
+    }
+}
+
+FsEvents::AbstractFsWatcher sub watch(string dir, string path, Queue results) {
+    SecretReader w(path, results);
+    w.addPath(dir);
+    return w;
+}
+
+code sub get_watch() {
+    return \\watch();
+}
+";
+
+    #! the sandboxed code: it calls the trusted code, and has a watcher of its own
+    const SandboxedSource = "
+%requires fsevent
+
+class OwnReader inherits FsEvents::AbstractFsWatcher {
+    private {
+        string path;
+        Queue results;
+    }
+
+    constructor(string path, Queue results) {
+        self.path = path;
+        self.results = results;
+    }
+
+    event(hash<FsEvents::FsEventInfo> event) {
+        try {
+            results.push(ReadOnlyFile::readTextFile(path));
+        } catch (hash<ExceptionInfo> ex) {
+            results.push(ex.err);
+        }
+    }
+}
+
+auto sub run(code c, string dir, string path, Queue results) {
+    return c(dir, path, results);
+}
+
+FsEvents::AbstractFsWatcher sub watch_here(string dir, string path, Queue results) {
+    OwnReader w(path, results);
+    w.addPath(dir);
+    return w;
+}
+";
+
+    constructor() : QUnit::Test("fsevent sandbox", "1.0", \ARGV) {
+        addTestCase("an unsandboxed creator's watcher reads the file", \testUnsandboxed());
+        addTestCase("a watcher created for a sandboxed caller is governed by its sandbox", \testTrustedForSandboxed());
+        addTestCase("a sandboxed Program's own watcher is governed by its sandbox", \testOwnWatcher());
+        set_return_value(main());
+    }
+
+    globalSetUp() {
+        string tmp = tmp_location() + DirSep + "qore-fsevent-sandbox-" + get_random_string(8);
+        mkdir(tmp);
+        dir = realpath(tmp);
+        secret = dir + DirSep + "secret.txt";
+        File f();
+        f.open2(secret, O_CREAT | O_TRUNC | O_WRONLY);
+        f.write(SecretContent);
+        f.close();
+    }
+
+    globalTearDown() {
+        if (dir.val()) {
+            try {
+                remove_tree(dir);
+            } catch (hash<ExceptionInfo> ex) {
+            }
+        }
+    }
+
+    #! returns a new empty directory to watch
+    private string getWatchedDir() {
+        string watched = sprintf("%s%swatched-%d", dir, DirSep, ++watched_count);
+        mkdir(watched);
+        return watched;
+    }
+
+    #! returns the trusted code
+    private Program getTrusted() {
+        Program u(PO_NEW_STYLE);
+        u.parse(TrustedSource, "trusted");
+        return u;
+    }
+
+    #! returns a sandboxed Program that may read the watched directory but nothing else
+    private Program getSandboxed(string watched) {
+        Program p(PO_NEW_STYLE);
+        p.parse(SandboxedSource, "sandboxed");
+        SandboxManager sm();
+        sm.setFilesystemDefaultPolicy(False);
+        sm.addFilesystemAllowedPath(watched, QSEC_READ);
+        p.setSandboxManager(sm);
+        return p;
+    }
+
+    #! makes a file in the watched directory, so that the watcher's thread calls event(), and returns the result
+    private static auto trigger(string watched, Queue results) {
+        File f();
+        f.open2(watched + DirSep + "event.txt", O_CREAT | O_TRUNC | O_WRONLY);
+        f.write("event");
+        f.close();
+        return results.get(EventTimeout);
+    }
+
+    testUnsandboxed() {
+        Program u = getTrusted();
+        string watched = getWatchedDir();
+        Queue results();
+        FsEvents::AbstractFsWatcher w = u.callFunction("watch", watched, secret, results);
+        assertEq(SecretContent, trigger(watched, results));
+        delete w;
+    }
+
+    testTrustedForSandboxed() {
+        Program u = getTrusted();
+        string watched = getWatchedDir();
+        Program p = getSandboxed(watched);
+        Queue results();
+        FsEvents::AbstractFsWatcher w = p.callFunction("run", u.callFunction("get_watch"), watched, secret, results);
+        assertEq("FILESYSTEM-ACCESS-DENIED", trigger(watched, results));
+        delete w;
+    }
+
+    testOwnWatcher() {
+        string watched = getWatchedDir();
+        Program p = getSandboxed(watched);
+        Queue results();
+        FsEvents::AbstractFsWatcher w = p.callFunction("watch_here", watched, secret, results);
+        assertEq("FILESYSTEM-ACCESS-DENIED", trigger(watched, results));
+        delete w;
+    }
+}

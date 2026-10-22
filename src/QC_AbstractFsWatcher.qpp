@@ -153,6 +153,10 @@ private:
     // detect a destructor invoked re-entrantly from within an in-flight callback (see stop()).
     // Protected by callback_lock.
     int callback_tid = -1;
+    // The sandbox of the code that created the watcher, captured in the constructor. efsw calls event() on its
+    // own watch thread, which Qore did not start and which has no caller; each callback runs under this sandbox,
+    // so the callback can never do more than the code that created the watcher.
+    QoreSandboxCapture sandbox;
 };
 
 FsWatcherPriv::FsWatcherPriv(QoreObject *obj) {
@@ -294,10 +298,15 @@ void FsWatcherPriv::handleFileAction(WatchID watchid, const std::string& dir, co
     // runs here but only after event() has fully completed, and stop() handles the watch-thread
     // case via the external join.
     m_obj->ref();
-    //printd(5, "FsWatcherPriv::handleFileAction this: %p m_obj: %p refs: %d\n", this, m_obj, m_obj->reference_count());
-    event->execManaged(m_obj, *args, &xsink).discard(&xsink);
-    //m_obj->evalMethodValue("event", *args, &xsink).discard(&xsink);
-    m_obj->deref(&xsink);
+    {
+        // the callback, and an object destructor that its release runs, are governed by the sandbox of the code
+        // that created the watcher
+        QoreSandboxCaptureHelper sch(sandbox);
+        //printd(5, "FsWatcherPriv::handleFileAction this: %p m_obj: %p refs: %d\n", this, m_obj, m_obj->reference_count());
+        event->execManaged(m_obj, *args, &xsink).discard(&xsink);
+        //m_obj->evalMethodValue("event", *args, &xsink).discard(&xsink);
+        m_obj->deref(&xsink);
+    }
 }
 
 //! Filesystem Event information
@@ -335,6 +344,12 @@ hashdecl Qore::FsEvents::FsEventInfo {
     - This simplifies event handler implementation as you don't need internal synchronization for watcher-local state
     - If you require concurrent processing of events, offload work from event() to your own worker threads
     - Note: multiple foreign thread IDs may be allocated by efsw even though callbacks are serialized
+
+    @par Sandboxing
+    - The event() callback runs under the sandbox (\c Qore::SandboxManager) of the code that created the watcher: the
+      filesystem and network policy that governed the constructor call also governs every event() call, although
+      the callbacks run on the watcher's own thread
+    - addPath() checks read access to the path with the sandbox of the code that calls it
 
     @par Exception Handling
     - Exceptions thrown in the event() callback are caught and discarded to prevent crashing the watcher thread
