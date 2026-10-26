@@ -229,7 +229,7 @@ int FsWatcherPriv::addWatch(const char * path, bool recursive, ExceptionSink *xs
         return 0;
     }
     // Check filesystem sandbox access before monitoring directory
-    QoreSandboxManagerHelper smh;
+    QoreSandboxManagerHelper smh(QoreSandboxManagerHelper::Policy);
     if (smh && !smh->checkFilesystemAccess(path, QSEC_READ, xsink)) {
         // checkFilesystemAccess should have raised an exception
         assert(*xsink);

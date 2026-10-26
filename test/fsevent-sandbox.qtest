@@ -98,6 +98,10 @@ auto sub run(code c, string dir, string path, Queue results) {
     return c(dir, path, results);
 }
 
+auto sub through(code c) {
+    return c();
+}
+
 FsEvents::AbstractFsWatcher sub watch_here(string dir, string path, Queue results) {
     OwnReader w(path, results);
     w.addPath(dir);
@@ -109,6 +113,8 @@ FsEvents::AbstractFsWatcher sub watch_here(string dir, string path, Queue result
         addTestCase("an unsandboxed creator's watcher reads the file", \testUnsandboxed());
         addTestCase("a watcher created for a sandboxed caller is governed by its sandbox", \testTrustedForSandboxed());
         addTestCase("a sandboxed Program's own watcher is governed by its sandbox", \testOwnWatcher());
+        addTestCase("a system-policy capability watches a directory that its sandboxed caller may not read",
+            \testCapability());
         set_return_value(main());
     }
 
@@ -191,6 +197,26 @@ FsEvents::AbstractFsWatcher sub watch_here(string dir, string path, Queue result
         Queue results();
         FsEvents::AbstractFsWatcher w = p.callFunction("watch_here", watched, secret, results);
         assertEq("FILESYSTEM-ACCESS-DENIED", trigger(watched, results));
+        delete w;
+    }
+
+    testCapability() {
+        Program u = getTrusted();
+        string watched = getWatchedDir();
+        # a directory that the sandbox does not allow to be read
+        string denied = getWatchedDir();
+        Program p = getSandboxed(watched);
+        Queue results();
+        # the same code called directly from the sandbox inherits the sandbox's policy
+        assertThrows("FILESYSTEM-ACCESS-DENIED", \p.callFunction(), ("through", auto sub () {
+            return u.callFunction("watch", denied, secret, results);
+        }), "addPath() of a denied directory called directly from the sandbox is denied");
+        # a system-policy capability called from the sandbox is subject to the system policy, not the sandbox's
+        code capability = SandboxManager::createSystemPolicyCall(auto sub () {
+            return u.callFunction("watch", denied, secret, results);
+        });
+        FsEvents::AbstractFsWatcher w = p.callFunction("through", capability);
+        assertEq((denied,), map realpath($1), w.directories(), "the capability watches the denied directory");
         delete w;
     }
 }
