@@ -243,7 +243,7 @@ int FsWatcherPriv::addWatch(const char * path, bool recursive, ExceptionSink *xs
         case Errors::FileRepeated:
         case Errors::FileOutOfScope:
         case Errors::Unspecified:
-            xsink->raiseException("FSWATCHER-ADD-ERROR", Errors::Log::getLastErrorLog().c_str());
+            xsink->raiseException("FSWATCHER-ADD-ERROR", "%s", Errors::Log::getLastErrorLog().c_str());
             return 0;
 
         default:
