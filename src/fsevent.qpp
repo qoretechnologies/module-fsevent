@@ -3,7 +3,7 @@
 
     Qore Programming Language
 
-    Copyright 2012 - 2021 Qore Technologies, s.r.o.
+    Copyright 2012 - 2026 Qore Technologies, s.r.o.
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,10 @@ extern "C" DLLEXPORT void fsevent_qore_module_desc(QoreModuleInfo& mod_info) {
     mod_info.init = fsevent_module_init;
     mod_info.ns_init = fsevent_module_ns_init;
     mod_info.del = fsevent_module_delete;
+#ifdef QORE_HAS_MODULE_NS_PURGE
+    // the namespace is purged when the module is deleted, before the types are freed (see QoreModuleInfo::ns)
+    mod_info.ns = &FsEventsNS;
+#endif
     mod_info.license = QL_LGPL;
     mod_info.license_str = "LGPL";
 }
