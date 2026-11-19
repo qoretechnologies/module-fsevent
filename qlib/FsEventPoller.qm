@@ -91,9 +91,14 @@ stop.waitForZero();
 
     Default value for matching is to take all file names.
 
-    @section fseventpoller_relnotes FsEventPoller Module Release Notes
+    @anchor fseventpoller_relnotes
 
-    @subsection fseventpoller_v020 FsEventPoller v0.2.0
+    @subpage fseventpollerreleasenotes
+*/
+
+/** @page fseventpollerreleasenotes FsEventPoller Release Notes
+
+    @section fseventpoller_v020 FsEventPoller v0.2.0
     - Added pause/resume capability to AbstractDelayedFsEventPoller
     - Added path filtering options (include_paths, exclude_paths)
     - Added error_callback option for async error handling
@@ -101,7 +106,7 @@ stop.waitForZero();
     - Added batch event processing option
     - Fixed minage error message
 
-    @subsection fseventpoller_v010 FsEventPoller v0.1.0
+    @section fseventpoller_v010 FsEventPoller v0.1.0
     - initial release
 */
 

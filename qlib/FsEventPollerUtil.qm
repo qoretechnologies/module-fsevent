@@ -81,9 +81,14 @@ hash<auto> event_record = {
 event_type.acceptsValue(event_record);
     @endcode
 
-    @section FsEventPollerutilrelnotes FsEventPollerUtil Module Release Notes
+    @anchor FsEventPollerutilrelnotes
 
-    @subsection FsEventPollerutilv1_0 Version 1.0
+    @subpage fseventpollerutilreleasenotes
+*/
+
+/** @page fseventpollerutilreleasenotes FsEventPollerUtil Release Notes
+
+    @section FsEventPollerutilv1_0 Version 1.0
     - initial release
 */
 
