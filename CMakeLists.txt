@@ -104,6 +104,7 @@ SET (module_name "fsevent")
 
 set(QORE_DOX_TMPL_SRC
   docs/mainpage.dox.tmpl
+    docs/platforms.dox.tmpl
     docs/guide-fseventreleasenotes.dox.tmpl
 )
 
@@ -119,6 +120,7 @@ endif()
 
 set(MODULE_DOX_INPUT "${CMAKE_BINARY_DIR}/mainpage.dox" ${_dox_src})
 list(APPEND MODULE_DOX_INPUT
+    ${CMAKE_CURRENT_BINARY_DIR}/platforms.dox
     ${CMAKE_CURRENT_BINARY_DIR}/guide-fseventreleasenotes.dox
 )
 qore_external_binary_module(${module_name} ${PROJECT_VERSION})
